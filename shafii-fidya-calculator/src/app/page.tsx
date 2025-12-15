@@ -2,43 +2,68 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-// We use the @ alias which is standard in Next.js
-import { calculateShafiiFidya, CalculationInputs, CalculationResults, MissedPeriod } from '@/utils/calculator';
-import { Trash2, PlusCircle, AlertTriangle, Calculator, Calendar } from 'lucide-react';
+import { calculateShafiiFidya, CalculationInputs, CalculationResults, MissedPeriod, SpecificYear } from '@/utils/calculator';
+import { Trash2, PlusCircle, AlertTriangle, Calculator, Calendar, Scale, Settings2 } from 'lucide-react';
 
 const defaultPeriods: MissedPeriod[] = [
   { startAge: 15, endAge: 25, fastsPerYear: 25 },
-  { startAge: 28, endAge: 50, fastsPerYear: 8 },
+];
+
+const defaultYears: SpecificYear[] = [
+  { year: new Date().getFullYear() - 10, days: 30 },
 ];
 
 export default function Home() {
+  // Calculation Settings
   const [currentAge, setCurrentAge] = useState(59);
   const [paymentYears, setPaymentYears] = useState(10);
   const [ricePrice, setRicePrice] = useState(35);
   const [sackWeight, setSackWeight] = useState(50);
+  const [fidyaUnitWeight, setFidyaUnitWeight] = useState(0.8); // New Input
+
+  // Calculation Mode
+  const [calcMode, setCalcMode] = useState<'age' | 'year'>('age');
+
+  // Input Data Arrays
   const [missedPeriods, setMissedPeriods] = useState<MissedPeriod[]>(defaultPeriods);
+  const [missedYears, setMissedYears] = useState<SpecificYear[]>(defaultYears);
+  
   const [results, setResults] = useState<CalculationResults | null>(null);
 
   useEffect(() => {
     const inputs: CalculationInputs = {
       currentAge,
+      currentYear: new Date().getFullYear(),
       paymentPlanYears: paymentYears,
       ricePrice,
       sackWeight,
-      fidyaUnitWeight: 0.8,
-      missedPeriods
+      fidyaUnitWeight,
+      // We pass both arrays, but based on logic one might be empty effectively
+      // or the user can actually use the calculator logic to sum both if we wanted.
+      // For this UI, we treat them as exclusive modes to keep it simple.
+      missedPeriods: calcMode === 'age' ? missedPeriods : [],
+      missedSpecificYears: calcMode === 'year' ? missedYears : []
     };
     setResults(calculateShafiiFidya(inputs));
-  }, [currentAge, paymentYears, ricePrice, sackWeight, missedPeriods]);
+  }, [currentAge, paymentYears, ricePrice, sackWeight, fidyaUnitWeight, missedPeriods, missedYears, calcMode]);
 
+  // --- Handlers for Age Mode ---
   const updatePeriod = (index: number, field: keyof MissedPeriod, val: number) => {
     const newPeriods = [...missedPeriods];
     newPeriods[index] = { ...newPeriods[index], [field]: val };
     setMissedPeriods(newPeriods);
   };
-
   const removePeriod = (index: number) => setMissedPeriods(missedPeriods.filter((_, i) => i !== index));
   const addPeriod = () => setMissedPeriods([...missedPeriods, { startAge: 20, endAge: 25, fastsPerYear: 10 }]);
+
+  // --- Handlers for Year Mode ---
+  const updateYearRow = (index: number, field: keyof SpecificYear, val: number) => {
+    const newYears = [...missedYears];
+    newYears[index] = { ...newYears[index], [field]: val };
+    setMissedYears(newYears);
+  };
+  const removeYearRow = (index: number) => setMissedYears(missedYears.filter((_, i) => i !== index));
+  const addYearRow = () => setMissedYears([...missedYears, { year: new Date().getFullYear() - 5, days: 5 }]);
 
   return (
     <main className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-100 font-sans selection:bg-purple-500/30 pb-20">
@@ -57,44 +82,67 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
-          {/* --- INPUT SECTION --- */}
+          {/* --- LEFT: INPUT SECTION --- */}
           <div className="lg:col-span-4 space-y-4">
             
-            {/* Settings Card */}
+            {/* 1. Global Settings */}
             <div className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-lg backdrop-blur-sm">
               <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-2">
-                <Calculator size={18} className="text-purple-400"/>
+                <Settings2 size={18} className="text-purple-400"/>
                 <h2 className="text-base font-semibold text-purple-200">Settings</h2>
               </div>
               <div className="space-y-4">
-                <InputGroup label="Current Age" value={currentAge} onChange={setCurrentAge} />
-                <InputGroup label="Plan Duration (Years)" value={paymentYears} onChange={setPaymentYears} />
                 <div className="grid grid-cols-2 gap-3">
-                   <InputGroup label="Rice Price (₹)" value={ricePrice} onChange={setRicePrice} />
-                   <InputGroup label="Sack Size (Kg)" value={sackWeight} onChange={setSackWeight} />
+                    <InputGroup label="Current Age" value={currentAge} onChange={setCurrentAge} />
+                    <InputGroup label="Plan (Years)" value={paymentYears} onChange={setPaymentYears} />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                   <InputGroup label="Price (₹)" value={ricePrice} onChange={setRicePrice} />
+                   <InputGroup label="Sack (Kg)" value={sackWeight} onChange={setSackWeight} />
+                   <InputGroup label="Fidya (Kg)" value={fidyaUnitWeight} onChange={setFidyaUnitWeight} step={0.1} />
                 </div>
               </div>
             </div>
 
-            {/* Missed Periods Card */}
+            {/* 2. Method Selector */}
+            <div className="p-1 rounded-xl bg-white/5 border border-white/10 flex">
+                <button 
+                    onClick={() => setCalcMode('age')}
+                    className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${calcMode === 'age' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                    Age Method
+                </button>
+                <button 
+                    onClick={() => setCalcMode('year')}
+                    className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${calcMode === 'year' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                    Year Method
+                </button>
+            </div>
+
+            {/* 3. Input List (Dynamic based on mode) */}
             <div className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-lg backdrop-blur-sm">
               <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
                 <div className="flex items-center gap-2">
                   <Calendar size={18} className="text-purple-400"/>
-                  <h2 className="text-base font-semibold text-purple-200">Missed Days</h2>
+                  <h2 className="text-base font-semibold text-purple-200">
+                    {calcMode === 'age' ? 'Missed by Age' : 'Missed by Year'}
+                  </h2>
                 </div>
-                <button onClick={addPeriod} className="text-emerald-400 hover:text-emerald-300 p-1 bg-emerald-500/10 rounded-full transition active:scale-95">
+                <button 
+                  onClick={calcMode === 'age' ? addPeriod : addYearRow} 
+                  className="text-emerald-400 hover:text-emerald-300 p-1 bg-emerald-500/10 rounded-full transition active:scale-95"
+                >
                   <PlusCircle size={20} />
                 </button>
               </div>
               
-              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
-                {missedPeriods.map((period, idx) => (
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                
+                {/* MODE: AGE */}
+                {calcMode === 'age' && missedPeriods.map((period, idx) => (
                   <div key={idx} className="p-3 rounded-xl bg-black/30 border border-white/5 relative group transition">
-                    <button 
-                      onClick={() => removePeriod(idx)} 
-                      className="absolute top-2 right-2 text-rose-500/70 hover:text-rose-400 p-1"
-                    >
+                    <button onClick={() => removePeriod(idx)} className="absolute top-2 right-2 text-rose-500/70 hover:text-rose-400 p-1">
                       <Trash2 size={16} />
                     </button>
                     <div className="grid grid-cols-2 gap-3">
@@ -106,11 +154,25 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
+
+                {/* MODE: YEAR */}
+                {calcMode === 'year' && missedYears.map((row, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-black/30 border border-white/5 relative group transition">
+                    <button onClick={() => removeYearRow(idx)} className="absolute top-2 right-2 text-rose-500/70 hover:text-rose-400 p-1">
+                      <Trash2 size={16} />
+                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <InputGroup label="Calendar Year" value={row.year} onChange={(v) => updateYearRow(idx, 'year', v)} compact />
+                      <InputGroup label="Days Missed" value={row.days} onChange={(v) => updateYearRow(idx, 'days', v)} compact />
+                    </div>
+                  </div>
+                ))}
+
               </div>
             </div>
           </div>
 
-          {/* --- RESULTS SECTION --- */}
+          {/* --- RIGHT: RESULTS SECTION --- */}
           <div className="lg:col-span-8 space-y-6">
             
             {/* Warning Box */}
@@ -119,7 +181,8 @@ export default function Home() {
               <div>
                 <h3 className="text-amber-400 font-bold text-xs uppercase tracking-wider mb-1">Ruling Confirmation</h3>
                 <p className="text-amber-100/80 text-xs leading-relaxed">
-                  Includes <strong>{results?.futurePenaltyUnits.toLocaleString()} extra units</strong> for future delays over {paymentYears} years (Shafi'i Madhab).
+                  Calculations based on <strong>{fidyaUnitWeight}kg</strong> per unit. 
+                  Includes <strong>{results?.futurePenaltyUnits.toLocaleString()} extra units</strong> for future delays over {paymentYears} years.
                 </p>
               </div>
             </div>
@@ -134,7 +197,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* APP-STYLE CARD LIST (Visible on Mobile) */}
+            {/* Mobile Card List */}
             {results && (
               <div className="block md:hidden space-y-3">
                  <div className="flex justify-between items-center px-2">
@@ -168,7 +231,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* DESKTOP TABLE (Hidden on Mobile) */}
+            {/* Desktop Table */}
             {results && (
               <div className="hidden md:block rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-lg">
                 <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
@@ -214,14 +277,15 @@ export default function Home() {
 }
 
 // Optimized Input Component with Numeric Keypad Support
-function InputGroup({ label, value, onChange, compact = false }: { label: string, value: number, onChange: (v: number) => void, compact?: boolean }) {
+function InputGroup({ label, value, onChange, compact = false, step = 1 }: { label: string, value: number, onChange: (v: number) => void, compact?: boolean, step?: number }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 px-1">{label}</label>
+      <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 px-1 truncate">{label}</label>
       <input
         type="number"
         inputMode="decimal"
         pattern="[0-9]*"
+        step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
         className={`w-full bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:bg-black/60 focus:ring-1 focus:ring-purple-500/50 transition duration-200 ${compact ? 'p-2 text-sm' : 'p-3 text-base'}`}
