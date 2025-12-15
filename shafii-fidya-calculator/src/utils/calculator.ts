@@ -13,27 +13,30 @@ export interface SpecificYear {
 
 export interface CalculationInputs {
     currentAge: number;
-    currentYear: number;     // New: Needed for Year-based calculation
-    fidyaUnitWeight: number; // New: Now dynamic
+    currentYear: number;     
+    fidyaUnitWeight: number; 
     ricePrice: number;       
     sackWeight: number;      
-    missedPeriods: MissedPeriod[];   // For Age Method
-    missedSpecificYears: SpecificYear[]; // For Year Method
+    missedPeriods: MissedPeriod[];   
+    missedSpecificYears: SpecificYear[]; 
     paymentPlanYears: number; 
 }
 
 export interface CalculationResults {
+    // Historical
     totalQadaFasts: number;
     totalFidyaUnits: number;
     totalFidyaWeightKg: number;
     totalMonetaryValue: number;
     totalSacks: number;
     
+    // Future Plan
     annualQadaFasts: number;
     annualFidyaWeightKg: number;
     annualMonetaryValue: number;
     annualSacks: number;
     
+    // Metadata for UI
     futurePenaltyUnits: number; 
     grandTotalCost: number;     
 }
@@ -53,7 +56,7 @@ export function calculateShafiiFidya(inputs: CalculationInputs): CalculationResu
     let totalQadaFasts = 0;
     let totalFidyaUnits = 0;
 
-    // --- STRATEGY 1: AGE BASED CALCULATION ---
+    // --- STRATEGY 1: AGE BASED ---
     for (const period of missedPeriods) {
         if (period.startAge > period.endAge) continue;
         const yearsInPeriod = period.endAge - period.startAge + 1;
@@ -68,14 +71,14 @@ export function calculateShafiiFidya(inputs: CalculationInputs): CalculationResu
         }
     }
 
-    // --- STRATEGY 2: SPECIFIC YEAR BASED CALCULATION ---
+    // --- STRATEGY 2: YEAR BASED ---
     for (const record of missedSpecificYears) {
         if (record.days <= 0) continue;
         
         totalQadaFasts += record.days;
 
         // Logic: Fast missed in 2000. Due in 2001.
-        // If Current Year is 2024. Delay = 2024 - 2001 = 23 years.
+        // If Current Year is 2025. Delay = 2025 - 2001 = 24 years.
         const dueYear = record.year + 1;
         const yearsOfDelay = Math.max(0, currentYear - dueYear);
 

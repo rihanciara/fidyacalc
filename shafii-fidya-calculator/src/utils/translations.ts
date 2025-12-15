@@ -34,7 +34,22 @@ export const translations = {
     year: "Year",
     annualCost: "Annual Cost",
     add: "Add",
-    remove: "Remove"
+    remove: "Remove",
+    readGuide: "Read Religious Guidelines",
+    backHome: "Back to Calculator",
+
+    // --- GUIDE CONTENT ---
+    guideTitle: "Religious Methodology & Guidelines",
+    sec1Title: "1. The Ideology Used",
+    sec1Text: "This calculator follows the **Strict Shafi'i Madhab** (Mu'tamad view). Specifically, it applies the rule of **Ta'addud al-Fidya** (Multiplication of Penalty). This means if a Qada fast is delayed for multiple years, the Fidya penalty multiplies by the number of years delayed.",
+    sec2Title: "2. Priority: Qada vs Fidya",
+    sec2Text: "For a physically healthy person, paying Fidya (rice) **does not** replace the obligation to Fast. You must do **BOTH**: Perform the Qada fast to clear the day's debt, and pay the Fidya to clear the delay's sin.",
+    sec3Title: "3. How to Perform Qada",
+    sec3Text: "You do not need to fast consecutively. You can fast on convenient days (e.g., Mondays/Thursdays). **The Intention (Niyyah):** Must be made at night before Fajr. Say: *'I intend to fast tomorrow for the Qada of Ramadan, for the sake of Allah.'*",
+    sec4Title: "4. How to Distribute Fidya",
+    sec4Text: "**What:** Raw staple food (Rice in Kerala). \n**Who:** To the poor (Faqir) or needy (Miskin). \n**Intention:** When handing over the rice, intend: *'This is the Fidya for my delayed Ramadan fasts.'*",
+    sec5Title: "5. Can I Pay Fidya Early?",
+    sec5Text: "**YES.** According to the Shafi'i Madhab, you can pay the Fidya for *past* missed fasts immediately, even if you plan to fast them over 10 years. It is recommended to pay the rice ASAP to clear the financial debt immediately.",
   },
   ml: {
     appTitle: "ഷാഫി ഫിദ്യ പ്ലാനർ",
@@ -67,6 +82,21 @@ export const translations = {
     year: "വർഷം",
     annualCost: "വർഷം തോറും",
     add: "ചേർക്കുക",
-    remove: "നീക്കം"
+    remove: "നീക്കം",
+    readGuide: "കർമ്മശാസ്ത്ര കുറിപ്പുകൾ",
+    backHome: "കാൽക്കുലേറ്ററിലേക്ക്",
+
+    // --- GUIDE CONTENT ---
+    guideTitle: "കർമ്മശാസ്ത്ര വിധികളും നിർദ്ദേശങ്ങളും",
+    sec1Title: "1. കണക്കാക്കുന്ന രീതി (മദ്ഹബ്)",
+    sec1Text: "ഇത് **ഷാഫി മദ്ഹബിലെ** പ്രബലമായ (മുഅ്തമദ്) അഭിപ്രായപ്രകാരമാണ് തയ്യാറാക്കിയിരിക്കുന്നത്. വർഷങ്ങൾ കഴിയുംതോറും ഫിദ്യ ഇരട്ടിക്കും (**തഅദ്ദുദുൽ ഫിദ്യ**) എന്ന നിയമമാണ് ഇതിൽ ഉപയോഗിച്ചിരിക്കുന്നത്. അതിനാൽ വരും വർഷങ്ങളിൽ നോൽക്കാനുള്ള നോമ്പിന്റെ ഫിദ്യയും ഇപ്പോൾ തന്നെ കണക്കാക്കുന്നു.",
+    sec2Title: "2. ഖളാഅ് വിട്ടുവീഴ്ചയില്ല",
+    sec2Text: "ശാരീരിക ആരോഗ്യമുള്ളവർക്ക് ഫിദ്യ നൽകിയതുകൊണ്ട് മാത്രം നോമ്പ് ഒഴിവാകുന്നില്ല. അവർ **രണ്ടും ചെയ്യണം**: നഷ്ടപ്പെട്ട നോമ്പ് ഖളാഅ് വീട്ടുകയും വേണം, അത് വൈകിച്ചതിനുള്ള ഫിദ്യ നൽകുകയും വേണം.",
+    sec3Title: "3. ഖളാഅ് വീട്ടേണ്ട രൂപം",
+    sec3Text: "തുടർച്ചയായി നോൽക്കണം എന്ന് നിർബന്ധമില്ല. സൗകര്യപ്രദമായ ദിവസങ്ങളിൽ (ഉദാ: തിങ്കൾ/വ്യാഴം) നോൽക്കാം. \n**നിയ്യത്ത്:** രാത്രി (സുബ്ഹിക്ക് മുമ്പ്) കരുതണം: *'റമദാനിൽ എനിക്ക് ഖളാഅ് ഉള്ള നോമ്പിനെ അല്ലാഹുവിന് വേണ്ടി നാളെ നോൽക്കാൻ ഞാൻ കരുതി.'*",
+    sec4Title: "4. ഫിദ്യ നൽകേണ്ട രൂപം",
+    sec4Text: "**എന്ത് നൽകണം:** നാട്ടിലെ മുഖ്യ ആഹാരം (അരി). പച്ചരിയാണ് ഉത്തമം. \n**ആർക്ക്:** ഫക്കീറിനോ മിസ്കീനോ നൽകണം. \n**നിയ്യത്ത്:** അരി കൈമാറുമ്പോൾ കരുതുക: *'എന്റെ മേൽ ഖളാഅ് ഉള്ള നോമ്പ് വൈകിച്ചതിലൂടെ നിർബന്ധമായ ഫിദ്യയെ ഞാൻ ഇതാ നൽകുന്നു.'*",
+    sec5Title: "5. ഫിദ്യ മുൻകൂട്ടി നൽകാമോ?",
+    sec5Text: "**നൽകാം.** നിലവിൽ ബാധ്യതയായി കഴിഞ്ഞ (പഴയ) നോമ്പുകളുടെ ഫിദ്യ ഇപ്പോൾ തന്നെ നൽകാവുന്നതാണ്. 10 വർഷം കൊണ്ട് നോമ്പ് നോറ്റുവീട്ടാനാണ് ഉദ്ദേശിക്കുന്നതെങ്കിലും, അതിന്റെ ഫിദ്യ (അരി) സാമ്പത്തിക കഴിവുണ്ടെങ്കിൽ ഇപ്പോൾ തന്നെ കൊടുത്തുതീർക്കുന്നതാണ് ഉത്തമം.",
   }
 };

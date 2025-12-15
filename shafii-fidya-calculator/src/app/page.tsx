@@ -2,9 +2,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { calculateShafiiFidya, CalculationInputs, CalculationResults, MissedPeriod, SpecificYear } from '@/utils/calculator';
-import { translations, Language } from '@/utils/translations'; // Import Translations
-import { Trash2, PlusCircle, AlertTriangle, Calculator, Calendar, Settings2, Languages } from 'lucide-react';
+import { translations, Language } from '@/utils/translations';
+import { Trash2, PlusCircle, AlertTriangle, Calculator, Calendar, Settings2, Languages, BookOpen } from 'lucide-react';
 
 const defaultPeriods: MissedPeriod[] = [
   { startAge: 15, endAge: 25, fastsPerYear: 25 },
@@ -15,18 +16,16 @@ const defaultYears: SpecificYear[] = [
 ];
 
 export default function Home() {
-  // --- STATE ---
-  const [lang, setLang] = useState<Language>('en'); // Language State
-  const t = translations[lang]; // Translation Helper
+  const [lang, setLang] = useState<Language>('en');
+  const t = translations[lang];
 
-  // Calculation Settings
+  // Settings
   const [currentAge, setCurrentAge] = useState(59);
   const [paymentYears, setPaymentYears] = useState(10);
   const [ricePrice, setRicePrice] = useState(35);
   const [sackWeight, setSackWeight] = useState(50);
   const [fidyaUnitWeight, setFidyaUnitWeight] = useState(0.8);
 
-  // Calculation Mode
   const [calcMode, setCalcMode] = useState<'age' | 'year'>('age');
 
   // Input Data
@@ -35,7 +34,7 @@ export default function Home() {
   
   const [results, setResults] = useState<CalculationResults | null>(null);
 
-  // --- EFFECT: CALCULATE ---
+  // Calculate
   useEffect(() => {
     const inputs: CalculationInputs = {
       currentAge,
@@ -50,19 +49,15 @@ export default function Home() {
     setResults(calculateShafiiFidya(inputs));
   }, [currentAge, paymentYears, ricePrice, sackWeight, fidyaUnitWeight, missedPeriods, missedYears, calcMode]);
 
-  // --- HANDLERS ---
+  // Handlers
   const updatePeriod = (index: number, field: keyof MissedPeriod, val: number) => {
-    const newPeriods = [...missedPeriods];
-    newPeriods[index] = { ...newPeriods[index], [field]: val };
-    setMissedPeriods(newPeriods);
+    const new = [...missedPeriods]; new[index] = { ...new[index], [field]: val }; setMissedPeriods(new);
   };
   const removePeriod = (index: number) => setMissedPeriods(missedPeriods.filter((_, i) => i !== index));
   const addPeriod = () => setMissedPeriods([...missedPeriods, { startAge: 20, endAge: 25, fastsPerYear: 10 }]);
 
   const updateYearRow = (index: number, field: keyof SpecificYear, val: number) => {
-    const newYears = [...missedYears];
-    newYears[index] = { ...newYears[index], [field]: val };
-    setMissedYears(newYears);
+    const newYears = [...missedYears]; newYears[index] = { ...newYears[index], [field]: val }; setMissedYears(newYears);
   };
   const removeYearRow = (index: number) => setMissedYears(missedYears.filter((_, i) => i !== index));
   const addYearRow = () => setMissedYears([...missedYears, { year: new Date().getFullYear() - 5, days: 5 }]);
@@ -72,18 +67,26 @@ export default function Home() {
       
       <div className="container mx-auto px-4 py-8 md:py-12 max-w-5xl">
         
-        {/* --- TOP BAR: LANGUAGE SWITCHER --- */}
-        <div className="flex justify-end mb-4">
-          <button 
-            onClick={() => setLang(lang === 'en' ? 'ml' : 'en')}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition text-sm font-medium"
-          >
-            <Languages size={16} className="text-purple-300" />
-            {lang === 'en' ? 'മലയാളം' : 'English'}
-          </button>
+        {/* --- NAVBAR --- */}
+        <div className="flex justify-between items-center mb-6">
+            <Link href="/guide" className="flex items-center gap-2 text-slate-400 hover:text-purple-300 transition text-sm font-medium group">
+                <div className="p-1.5 bg-white/5 rounded-lg group-hover:bg-purple-500/20 transition">
+                    <BookOpen size={18} />
+                </div>
+                <span className="hidden md:inline">{t.readGuide}</span>
+                <span className="md:hidden">Guide</span>
+            </Link>
+
+            <button 
+                onClick={() => setLang(lang === 'en' ? 'ml' : 'en')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition text-sm font-medium"
+            >
+                <Languages size={16} className="text-purple-300" />
+                {lang === 'en' ? 'മലയാളം' : 'English'}
+            </button>
         </div>
 
-        {/* Header */}
+        {/* --- HEADER --- */}
         <header className="mb-8 md:mb-12 text-center">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight">
             {t.appTitle}
@@ -95,10 +98,9 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
-          {/* --- LEFT: INPUTS --- */}
+          {/* --- INPUTS --- */}
           <div className="lg:col-span-4 space-y-4">
             
-            {/* 1. Global Settings */}
             <div className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-lg backdrop-blur-sm">
               <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-2">
                 <Settings2 size={18} className="text-purple-400"/>
@@ -117,7 +119,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 2. Method Selector */}
             <div className="p-1 rounded-xl bg-white/5 border border-white/10 flex">
                 <button 
                     onClick={() => setCalcMode('age')}
@@ -133,7 +134,6 @@ export default function Home() {
                 </button>
             </div>
 
-            {/* 3. Input List */}
             <div className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-lg backdrop-blur-sm">
               <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
                 <div className="flex items-center gap-2">
@@ -149,44 +149,32 @@ export default function Home() {
               </div>
               
               <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
-                
-                {/* MODE: AGE */}
                 {calcMode === 'age' && missedPeriods.map((period, idx) => (
                   <div key={idx} className="p-3 rounded-xl bg-black/30 border border-white/5 relative group transition">
-                    <button onClick={() => removePeriod(idx)} className="absolute top-2 right-2 text-rose-500/70 hover:text-rose-400 p-1">
-                      <Trash2 size={16} />
-                    </button>
+                    <button onClick={() => removePeriod(idx)} className="absolute top-2 right-2 text-rose-500/70 hover:text-rose-400 p-1"><Trash2 size={16} /></button>
                     <div className="grid grid-cols-2 gap-3">
                       <InputGroup label={t.ageFrom} value={period.startAge} onChange={(v) => updatePeriod(idx, 'startAge', v)} compact />
                       <InputGroup label={t.ageTo} value={period.endAge} onChange={(v) => updatePeriod(idx, 'endAge', v)} compact />
-                      <div className="col-span-2">
-                        <InputGroup label={t.fastsPerYear} value={period.fastsPerYear} onChange={(v) => updatePeriod(idx, 'fastsPerYear', v)} compact />
-                      </div>
+                      <div className="col-span-2"><InputGroup label={t.fastsPerYear} value={period.fastsPerYear} onChange={(v) => updatePeriod(idx, 'fastsPerYear', v)} compact /></div>
                     </div>
                   </div>
                 ))}
 
-                {/* MODE: YEAR */}
                 {calcMode === 'year' && missedYears.map((row, idx) => (
                   <div key={idx} className="p-3 rounded-xl bg-black/30 border border-white/5 relative group transition">
-                    <button onClick={() => removeYearRow(idx)} className="absolute top-2 right-2 text-rose-500/70 hover:text-rose-400 p-1">
-                      <Trash2 size={16} />
-                    </button>
+                    <button onClick={() => removeYearRow(idx)} className="absolute top-2 right-2 text-rose-500/70 hover:text-rose-400 p-1"><Trash2 size={16} /></button>
                     <div className="grid grid-cols-2 gap-3">
                       <InputGroup label={t.calendarYear} value={row.year} onChange={(v) => updateYearRow(idx, 'year', v)} compact />
                       <InputGroup label={t.daysMissed} value={row.days} onChange={(v) => updateYearRow(idx, 'days', v)} compact />
                     </div>
                   </div>
                 ))}
-
               </div>
             </div>
           </div>
 
-          {/* --- RIGHT: RESULTS --- */}
+          {/* --- RESULTS --- */}
           <div className="lg:col-span-8 space-y-6">
-            
-            {/* Warning Box */}
             <div className="p-4 rounded-xl bg-amber-900/20 border border-amber-500/20 flex gap-3 items-start">
               <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={20} />
               <div>
@@ -197,7 +185,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Stats Grid */}
             {results && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard label={t.totalCost} value={`₹${results.grandTotalCost.toLocaleString()}`} sub={t.withPenalty} highlight />
@@ -207,7 +194,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Mobile Card List */}
             {results && (
               <div className="block md:hidden space-y-3">
                  <div className="flex justify-between items-center px-2">
@@ -223,25 +209,15 @@ export default function Home() {
                         <span className="text-emerald-300 font-mono font-bold text-lg">₹{results.annualMonetaryValue.toLocaleString()}</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="bg-black/20 rounded p-2">
-                          <div className="text-[10px] text-slate-500 uppercase">{t.totalQada}</div>
-                          <div className="text-purple-300 font-medium">{results.annualQadaFasts}</div>
-                        </div>
-                        <div className="bg-black/20 rounded p-2">
-                          <div className="text-[10px] text-slate-500 uppercase">{t.totalRice}</div>
-                          <div className="text-slate-200 font-medium">{results.annualFidyaWeightKg}kg</div>
-                        </div>
-                        <div className="bg-black/20 rounded p-2">
-                          <div className="text-[10px] text-slate-500 uppercase">{t.totalSacks}</div>
-                          <div className="text-slate-200 font-medium">{results.annualSacks}</div>
-                        </div>
+                        <div className="bg-black/20 rounded p-2"><div className="text-[10px] text-slate-500 uppercase">{t.totalQada}</div><div className="text-purple-300 font-medium">{results.annualQadaFasts}</div></div>
+                        <div className="bg-black/20 rounded p-2"><div className="text-[10px] text-slate-500 uppercase">{t.totalRice}</div><div className="text-slate-200 font-medium">{results.annualFidyaWeightKg}kg</div></div>
+                        <div className="bg-black/20 rounded p-2"><div className="text-[10px] text-slate-500 uppercase">{t.totalSacks}</div><div className="text-slate-200 font-medium">{results.annualSacks}</div></div>
                       </div>
                    </div>
                  ))}
               </div>
             )}
 
-            {/* Desktop Table */}
             {results && (
               <div className="hidden md:block rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-lg">
                 <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
@@ -268,9 +244,7 @@ export default function Home() {
                           <td className="p-4 text-purple-300">{results.annualQadaFasts}</td>
                           <td className="p-4">{results.annualFidyaWeightKg} kg</td>
                           <td className="p-4">{results.annualSacks}</td>
-                          <td className="p-4 text-right font-mono text-emerald-300 font-bold">
-                            ₹{results.annualMonetaryValue.toLocaleString()}
-                          </td>
+                          <td className="p-4 text-right font-mono text-emerald-300 font-bold">₹{results.annualMonetaryValue.toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -278,7 +252,6 @@ export default function Home() {
                 </div>
               </div>
             )}
-
           </div>
         </div>
       </div>
@@ -290,15 +263,7 @@ function InputGroup({ label, value, onChange, compact = false, step = 1 }: { lab
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 px-1 truncate">{label}</label>
-      <input
-        type="number"
-        inputMode="decimal"
-        pattern="[0-9]*"
-        step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        className={`w-full bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:bg-black/60 focus:ring-1 focus:ring-purple-500/50 transition duration-200 ${compact ? 'p-2 text-sm' : 'p-3 text-base'}`}
-      />
+      <input type="number" inputMode="decimal" pattern="[0-9]*" step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value) || 0)} className={`w-full bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:bg-black/60 focus:ring-1 focus:ring-purple-500/50 transition duration-200 ${compact ? 'p-2 text-sm' : 'p-3 text-base'}`} />
     </div>
   );
 }
