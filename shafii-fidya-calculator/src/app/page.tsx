@@ -2,8 +2,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { calculateShafiiFidya, CalculationInputs, CalculationResults, MissedPeriod } from '../utils/calculator';
-import { Trash2, PlusCircle, AlertTriangle, Calculator, Calendar, ChevronRight } from 'lucide-react';
+// We use the @ alias which is standard in Next.js
+import { calculateShafiiFidya, CalculationInputs, CalculationResults, MissedPeriod } from '@/utils/calculator';
+import { Trash2, PlusCircle, AlertTriangle, Calculator, Calendar } from 'lucide-react';
 
 const defaultPeriods: MissedPeriod[] = [
   { startAge: 15, endAge: 25, fastsPerYear: 25 },
@@ -44,7 +45,7 @@ export default function Home() {
       
       <div className="container mx-auto px-4 py-8 md:py-12 max-w-5xl">
         
-        {/* Mobile-First Header */}
+        {/* Header */}
         <header className="mb-8 md:mb-12 text-center">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight">
             Shafi'i Fidya Planner
@@ -219,7 +220,7 @@ function InputGroup({ label, value, onChange, compact = false }: { label: string
       <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 px-1">{label}</label>
       <input
         type="number"
-        inputMode="decimal" // This triggers numeric keypad on mobile
+        inputMode="decimal"
         pattern="[0-9]*"
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
