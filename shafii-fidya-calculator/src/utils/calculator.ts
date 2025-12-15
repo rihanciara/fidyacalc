@@ -9,12 +9,13 @@ export interface MissedPeriod {
 export interface CalculationInputs {
     currentAge: number;
     fidyaUnitWeight: number; // e.g., 0.8 kg
-    ricePrice: number;      // e.g., 35 INR/kg
-    sackWeight: number;     // e.g., 50 kg
+    ricePrice: number;       // e.g., 35 INR/kg
+    sackWeight: number;      // e.g., 50 kg
     missedPeriods: MissedPeriod[];
     paymentPlanYears: number; // e.g., 10 years
 }
 
+// THIS INTERFACE WAS MISSING THE "grandTotalCost" FIELD
 export interface CalculationResults {
     // Historical Totals (If paid today)
     totalQadaFasts: number;
@@ -23,14 +24,15 @@ export interface CalculationResults {
     totalMonetaryValue: number;
     totalSacks: number;
 
-    // Future-Proof Plan Results (Includes Future Penalty)
+    // Future-Proof Plan Results
     annualQadaFasts: number;
     annualFidyaWeightKg: number;
     annualMonetaryValue: number;
     annualSacks: number;
     
-    // New field: Shows how much extra penalty was added for the future delay
+    // THE FIX: These must be defined here
     futurePenaltyUnits: number; 
+    grandTotalCost: number;     
 }
 
 export function calculateShafiiFidya(inputs: CalculationInputs): CalculationResults {
@@ -63,38 +65,24 @@ export function calculateShafiiFidya(inputs: CalculationInputs): CalculationResu
         }
     }
 
-    // --- Final Summary Calculations (Paid Now) ---
+    // Historical Totals
     const totalFidyaWeightKg = totalFidyaUnits * fidyaUnitWeight;
     const totalMonetaryValue = totalFidyaWeightKg * ricePrice;
     const totalSacks = totalFidyaWeightKg / sackWeight;
 
-    // --- N-Year Payment Plan Calculation (With Future Compounding) ---
+    // 2. Future-Proof Plan (The Fix)
     const annualQadaFasts = Math.ceil(totalQadaFasts / paymentPlanYears);
 
-    // Calculate the EXTRA penalty for delaying these fasts into the future years.
-    // Logic: 
-    // Year 1 of plan: 0 years extra delay.
-    // Year 2 of plan: 1 year extra delay.
-    // ...
-    // Year 10 of plan: 9 years extra delay.
-    
-    // Sum of integers from 0 to (Years - 1)
+    // Calculate Future Penalty (Sum of years 0 to N-1)
     const yearsOfFutureDelay = paymentPlanYears - 1;
     const sumOfFutureYears = (yearsOfFutureDelay * (yearsOfFutureDelay + 1)) / 2;
-    
-    // Total EXTRA units = (Fasts Per Year) * (Sum of Delays)
     const futurePenaltyUnits = annualQadaFasts * sumOfFutureYears;
 
-    // Add this future penalty to the existing total
+    // Total Plan Values (Including Penalty)
     const totalPlanUnits = totalFidyaUnits + futurePenaltyUnits;
     const totalPlanWeight = totalPlanUnits * fidyaUnitWeight;
     const totalPlanValue = totalPlanWeight * ricePrice;
     const totalPlanSacks = totalPlanWeight / sackWeight;
-
-    // Calculate Annual Averages based on this NEW total
-    const annualFidyaWeightKg = totalPlanWeight / paymentPlanYears;
-    const annualMonetaryValue = totalPlanValue / paymentPlanYears;
-    const annualSacks = totalPlanSacks / paymentPlanYears;
 
     return {
         totalQadaFasts,
@@ -104,10 +92,12 @@ export function calculateShafiiFidya(inputs: CalculationInputs): CalculationResu
         totalSacks: parseFloat(totalSacks.toFixed(2)),
         
         annualQadaFasts,
-        annualFidyaWeightKg: parseFloat(annualFidyaWeightKg.toFixed(2)),
-        annualMonetaryValue: Math.round(annualMonetaryValue),
-        annualSacks: parseFloat(annualSacks.toFixed(2)),
+        annualFidyaWeightKg: parseFloat((totalPlanWeight / paymentPlanYears).toFixed(2)),
+        annualMonetaryValue: Math.round(totalPlanValue / paymentPlanYears),
+        annualSacks: parseFloat((totalPlanSacks / paymentPlanYears).toFixed(2)),
         
-        futurePenaltyUnits // Useful to show user "Extra penalty for delay"
+        // Exporting these fixes the build error
+        futurePenaltyUnits,
+        grandTotalCost: Math.round(totalPlanValue) 
     };
 }
