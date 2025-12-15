@@ -1,0 +1,72 @@
+// src/utils/translations.ts
+
+export type Language = 'en' | 'ml';
+
+export const translations = {
+  en: {
+    appTitle: "Shafi'i Fidya Planner",
+    appSubtitle: "Strict compounding calculation with future-proof planning.",
+    settings: "Settings",
+    currentAge: "Current Age",
+    planDuration: "Plan Duration (Years)",
+    ricePrice: "Rice Price (₹)",
+    sackSize: "Sack Size (Kg)",
+    fidyaWeight: "Fidya Weight (Kg)",
+    ageMethod: "Age Method",
+    yearMethod: "Year Method",
+    missedTitle: "Missed Fasting",
+    ageFrom: "Age From",
+    ageTo: "Age To",
+    fastsPerYear: "Fasts / Year",
+    calendarYear: "Year",
+    daysMissed: "Days Missed",
+    rulingTitle: "Ruling Confirmation",
+    rulingText: (weight: number, extra: string) => 
+      `Calculations based on ${weight}kg per unit. Includes ${extra} extra units for future delays.`,
+    totalCost: "Total Cost",
+    withPenalty: "With Penalty",
+    totalQada: "Total Qada",
+    days: "Days",
+    totalRice: "Total Rice",
+    totalSacks: "Total Sacks",
+    bags: "Bags",
+    paymentPlan: "Payment Plan",
+    year: "Year",
+    annualCost: "Annual Cost",
+    add: "Add",
+    remove: "Remove"
+  },
+  ml: {
+    appTitle: "ഷാഫി ഫിദ്യ പ്ലാനർ",
+    appSubtitle: "കർശനമായ ഷാഫി മദ്ഹബ് പ്രകാരമുള്ള ഫിദ്യ കണക്കാക്കൽ.",
+    settings: "ക്രമീകരണങ്ങൾ",
+    currentAge: "നിലവിലെ വയസ്സ്",
+    planDuration: "കാലാവധി (വർഷം)",
+    ricePrice: "അരി വില (₹)",
+    sackSize: "ചാക്ക് തൂക്കം (Kg)",
+    fidyaWeight: "ഫിദ്യ തൂക്കം (Kg)",
+    ageMethod: "വയസ്സ് അടിസ്ഥാനം",
+    yearMethod: "വർഷം അടിസ്ഥാനം",
+    missedTitle: "നഷ്ടപ്പെട്ട നോമ്പുകൾ",
+    ageFrom: "വയസ്സ് (മുതൽ)",
+    ageTo: "വയസ്സ് (വരെ)",
+    fastsPerYear: "എണ്ണം / വർഷം",
+    calendarYear: "വർഷം",
+    daysMissed: "എണ്ണം",
+    rulingTitle: "കർമ്മശാസ്ത്ര വിധി",
+    rulingText: (weight: number, extra: string) => 
+      `ഒരു മുദ്ദ് ${weight}kg കണക്കാക്കി. വരും വർഷങ്ങളിലെ കാലതാമസം പരിഗണിച്ച് ${extra} യൂണിറ്റ് അധികമായി ചേർത്തിട്ടുണ്ട്.`,
+    totalCost: "ആകെ ചിലവ്",
+    withPenalty: "ഫിദ്യ ഉൾപ്പെടെ",
+    totalQada: "ആകെ ഖളാഅ്",
+    days: "നോമ്പ്",
+    totalRice: "ആകെ അരി",
+    totalSacks: "ആകെ ചാക്ക്",
+    bags: "എണ്ണം",
+    paymentPlan: "തിരിച്ചടവ് പ്ലാൻ",
+    year: "വർഷം",
+    annualCost: "വർഷം തോറും",
+    add: "ചേർക്കുക",
+    remove: "നീക്കം"
+  }
+};
