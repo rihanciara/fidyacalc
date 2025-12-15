@@ -1,176 +1,240 @@
-// app/page.tsx (or pages/index.tsx)
-
-'use client'; // Required for Next.js App Router for client-side components
+// src/app/page.tsx
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { calculateShafiiFidya, CalculationInputs, CalculationResults, MissedPeriod } from '../utils/calculator';
-
-// Helper to format currency for Indian Rupees
-const formatCurrency = (value: number) => {
-    return value.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 });
-};
-
-// Helper to format general numbers
-const formatNumber = (value: number, decimals: number = 0) => {
-    return value.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-};
+import { Trash2, PlusCircle, AlertTriangle, Calculator, Calendar, ChevronRight } from 'lucide-react';
 
 const defaultPeriods: MissedPeriod[] = [
-    { startAge: 15, endAge: 25, fastsPerYear: 25 },
-    { startAge: 28, endAge: 50, fastsPerYear: 8 },
+  { startAge: 15, endAge: 25, fastsPerYear: 25 },
+  { startAge: 28, endAge: 50, fastsPerYear: 8 },
 ];
 
 export default function Home() {
-    const [currentAge, setCurrentAge] = useState(59);
-    const [fidyaUnitWeight, setFidyaUnitWeight] = useState(0.8);
-    const [ricePrice, setRicePrice] = useState(35);
-    const [sackWeight, setSackWeight] = useState(50);
-    const [paymentPlanYears, setPaymentPlanYears] = useState(10);
-    const [missedPeriods, setMissedPeriods] = useState<MissedPeriod[]>(defaultPeriods);
-    const [results, setResults] = useState<CalculationResults | null>(null);
+  const [currentAge, setCurrentAge] = useState(59);
+  const [paymentYears, setPaymentYears] = useState(10);
+  const [ricePrice, setRicePrice] = useState(35);
+  const [sackWeight, setSackWeight] = useState(50);
+  const [missedPeriods, setMissedPeriods] = useState<MissedPeriod[]>(defaultPeriods);
+  const [results, setResults] = useState<CalculationResults | null>(null);
 
-    useEffect(() => {
-        handleCalculate();
-    }, [currentAge, fidyaUnitWeight, ricePrice, sackWeight, missedPeriods, paymentPlanYears]);
-
-    const handleCalculate = () => {
-        const inputs: CalculationInputs = {
-            currentAge,
-            fidyaUnitWeight,
-            ricePrice,
-            sackWeight,
-            missedPeriods,
-            paymentPlanYears,
-        };
-        const calculatedResults = calculateShafiiFidya(inputs);
-        setResults(calculatedResults);
+  useEffect(() => {
+    const inputs: CalculationInputs = {
+      currentAge,
+      paymentPlanYears: paymentYears,
+      ricePrice,
+      sackWeight,
+      fidyaUnitWeight: 0.8,
+      missedPeriods
     };
+    setResults(calculateShafiiFidya(inputs));
+  }, [currentAge, paymentYears, ricePrice, sackWeight, missedPeriods]);
 
-    const handlePeriodChange = (index: number, field: keyof MissedPeriod, value: number) => {
-        const newPeriods = [...missedPeriods];
-        newPeriods[index] = { ...newPeriods[index], [field]: value };
-        setMissedPeriods(newPeriods);
-    };
+  const updatePeriod = (index: number, field: keyof MissedPeriod, val: number) => {
+    const newPeriods = [...missedPeriods];
+    newPeriods[index] = { ...newPeriods[index], [field]: val };
+    setMissedPeriods(newPeriods);
+  };
 
-    const addPeriod = () => {
-        setMissedPeriods([...missedPeriods, { startAge: currentAge, endAge: currentAge, fastsPerYear: 1 }]);
-    };
+  const removePeriod = (index: number) => setMissedPeriods(missedPeriods.filter((_, i) => i !== index));
+  const addPeriod = () => setMissedPeriods([...missedPeriods, { startAge: 20, endAge: 25, fastsPerYear: 10 }]);
 
-    const removePeriod = (index: number) => {
-        setMissedPeriods(missedPeriods.filter((_, i) => i !== index));
-    };
+  return (
+    <main className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-100 font-sans selection:bg-purple-500/30 pb-20">
+      
+      <div className="container mx-auto px-4 py-8 md:py-12 max-w-5xl">
+        
+        {/* Mobile-First Header */}
+        <header className="mb-8 md:mb-12 text-center">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight">
+            Shafi'i Fidya Planner
+          </h1>
+          <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
+            Strict compounding calculation with future-proof planning.
+          </p>
+        </header>
 
-    const renderInput = (label: string, value: number, setter: (v: number) => void, step: number = 1) => (
-        <div className="input-group">
-            <label>{label}</label>
-            <input
-                type="number"
-                value={value}
-                onChange={(e) => setter(parseFloat(e.target.value) || 0)}
-                min={0}
-                step={step}
-                className="input-field"
-            />
-        </div>
-    );
-
-    const renderResultsTable = (title: string, data: { label: string, value: number, unit: string, decimals?: number, currency?: boolean }[]) => (
-        <div className="result-section">
-            <h2 className="heading">{title}</h2>
-            <table className="results-table">
-                <thead>
-                    <tr><th>Obligation Category</th><th>Value</th><th>Unit</th></tr>
-                </thead>
-                <tbody>
-                    {data.map((item, index) => (
-                        <tr key={index} className={index >= data.length - 3 ? 'highlight' : ''}>
-                            <td>{item.label}</td>
-                            <td>
-                                {item.currency 
-                                    ? formatCurrency(item.value) 
-                                    : formatNumber(item.value, item.decimals)}
-                            </td>
-                            <td>{item.unit}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-
-    return (
-        <div className="container">
-            <style jsx global>{`
-                body { font-family: 'Arial', sans-serif; background-color: #f4f7f6; color: #333; line-height: 1.6; padding: 20px; }
-                .container { max-width: 900px; margin: 30px auto; padding: 25px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
-                .heading { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-top: 25px; }
-                .input-group { margin-bottom: 15px; }
-                label { display: block; margin-bottom: 5px; font-weight: bold; }
-                .input-field { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-                .period-container { border: 1px dashed #ccc; padding: 15px; border-radius: 8px; margin-top: 10px; background-color: #fafafa; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
-                .period-container > div { flex: 1 1 200px; }
-                .remove-btn { background-color: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
-                .add-btn { background-color: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 20px; transition: background-color 0.3s; }
-                .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                .results-table th, .results-table td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
-                .results-table th { background-color: #007bff; color: white; }
-                .highlight { background-color: #fff3cd; font-weight: bold; }
-                .warning { color: red; font-weight: bold; margin-top: 15px; border: 2px dashed red; padding: 10px; border-radius: 5px; }
-            `}</style>
-
-            <h1 className="heading">🕌 Shafi'i Compounded Fidya Calculator</h1>
-            <p>Calculates the cumulative debt (Qada & Fidya) for delayed fasts based on the strict Shafi'i Madhab ruling.</p>
-
-            {/* General Data */}
-            <h2 className="heading">1. General Rates & Age</h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-                {renderInput("Current Age (Years):", currentAge, setCurrentAge)}
-                {renderInput("Fidya Unit Weight (kg, e.g., 0.8):", fidyaUnitWeight, setFidyaUnitWeight, 0.1)}
-                {renderInput("Local Rice Price (₹ per kg):", ricePrice, setRicePrice)}
-                {renderInput("Standard Sack Weight (kg, e.g., 50):", sackWeight, setSackWeight)}
-                {renderInput("Payment Plan (Years):", paymentPlanYears, setPaymentPlanYears)}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          
+          {/* --- INPUT SECTION --- */}
+          <div className="lg:col-span-4 space-y-4">
+            
+            {/* Settings Card */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-lg backdrop-blur-sm">
+              <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-2">
+                <Calculator size={18} className="text-purple-400"/>
+                <h2 className="text-base font-semibold text-purple-200">Settings</h2>
+              </div>
+              <div className="space-y-4">
+                <InputGroup label="Current Age" value={currentAge} onChange={setCurrentAge} />
+                <InputGroup label="Plan Duration (Years)" value={paymentYears} onChange={setPaymentYears} />
+                <div className="grid grid-cols-2 gap-3">
+                   <InputGroup label="Rice Price (₹)" value={ricePrice} onChange={setRicePrice} />
+                   <InputGroup label="Sack Size (Kg)" value={sackWeight} onChange={setSackWeight} />
+                </div>
+              </div>
             </div>
 
-            {/* Missed Fasts Data */}
-            <h2 className="heading">2. Missed Fasts Data (Periods)</h2>
-            <p>Enter the age ranges where you missed fasts and failed to make them up before the next Ramadan.</p>
-            <div>
-                {missedPeriods.map((period, index) => (
-                    <div key={index} className="period-container">
-                        <div style={{ flex: '1 1 100%' }}><strong>Period {index + 1}</strong></div>
-                        {renderInput("Start Age Missed:", period.startAge, (v) => handlePeriodChange(index, 'startAge', v))}
-                        {renderInput("End Age Missed:", period.endAge, (v) => handlePeriodChange(index, 'endAge', v))}
-                        {renderInput("Fasts Missed Per Year:", period.fastsPerYear, (v) => handlePeriodChange(index, 'fastsPerYear', v))}
-                        <button className="remove-btn" onClick={() => removePeriod(index)}>Remove</button>
+            {/* Missed Periods Card */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-lg backdrop-blur-sm">
+              <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                <div className="flex items-center gap-2">
+                  <Calendar size={18} className="text-purple-400"/>
+                  <h2 className="text-base font-semibold text-purple-200">Missed Days</h2>
+                </div>
+                <button onClick={addPeriod} className="text-emerald-400 hover:text-emerald-300 p-1 bg-emerald-500/10 rounded-full transition active:scale-95">
+                  <PlusCircle size={20} />
+                </button>
+              </div>
+              
+              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
+                {missedPeriods.map((period, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-black/30 border border-white/5 relative group transition">
+                    <button 
+                      onClick={() => removePeriod(idx)} 
+                      className="absolute top-2 right-2 text-rose-500/70 hover:text-rose-400 p-1"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <InputGroup label="Age From" value={period.startAge} onChange={(v) => updatePeriod(idx, 'startAge', v)} compact />
+                      <InputGroup label="Age To" value={period.endAge} onChange={(v) => updatePeriod(idx, 'endAge', v)} compact />
+                      <div className="col-span-2">
+                        <InputGroup label="Fasts Per Year" value={period.fastsPerYear} onChange={(v) => updatePeriod(idx, 'fastsPerYear', v)} compact />
+                      </div>
                     </div>
+                  </div>
                 ))}
-                <button className="add-btn" onClick={addPeriod}>+ Add Another Period</button>
+              </div>
+            </div>
+          </div>
+
+          {/* --- RESULTS SECTION --- */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* Warning Box */}
+            <div className="p-4 rounded-xl bg-amber-900/20 border border-amber-500/20 flex gap-3 items-start">
+              <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+              <div>
+                <h3 className="text-amber-400 font-bold text-xs uppercase tracking-wider mb-1">Ruling Confirmation</h3>
+                <p className="text-amber-100/80 text-xs leading-relaxed">
+                  Includes <strong>{results?.futurePenaltyUnits.toLocaleString()} extra units</strong> for future delays over {paymentYears} years (Shafi'i Madhab).
+                </p>
+              </div>
             </div>
 
-            {/* Results */}
+            {/* High Level Stats Grid */}
             {results && (
-                <>
-                    {/* Final Obligation Summary */}
-                    {renderResultsTable("3. Final Obligation Summary (Paid Now at Age " + currentAge + ")", [
-                        { label: "Total Qada Fasts Owed", value: results.totalQadaFasts, unit: "Days" },
-                        { label: "Total Compounded Fidya Penalty", value: results.totalFidyaUnits, unit: "Units" },
-                        { label: "Total Fidya Weight Owed", value: results.totalFidyaWeightKg, unit: "kg", decimals: 2 },
-                        { label: "Total Monetary Value Owed", value: results.totalMonetaryValue, unit: "₹", currency: true },
-                        { label: "Total Sacks Required (" + sackWeight + " kg)", value: results.totalSacks, unit: "Sacks", decimals: 2 },
-                    ])}
-                    <div className="warning">
-                        **Shafi'i Confirmation:** Since you are able to fast, you must perform **{results.totalQadaFasts} Qada Fasts** AND pay the **{formatCurrency(results.totalMonetaryValue)} Fidya** penalty.
-                    </div>
-
-                    {/* N-Year Plan */}
-                    {renderResultsTable(`4. ${paymentPlanYears}-Year Payment Plan`, [
-                        { label: "Annual Qada Fasts (Round Up)", value: results.annualQadaFasts, unit: "Days" },
-                        { label: "Annual Fidya Weight", value: results.annualFidyaWeightKg, unit: "kg", decimals: 2 },
-                        { label: "Annual Monetary Value", value: results.annualMonetaryValue, unit: "₹", currency: true },
-                        { label: "Annual Sacks Required", value: results.annualSacks, unit: "Sacks", decimals: 2 },
-                    ])}
-                </>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <StatCard label="Total Cost" value={`₹${results.grandTotalCost.toLocaleString()}`} sub="With Penalty" highlight />
+                <StatCard label="Total Qada" value={results.totalQadaFasts} sub="Days" />
+                <StatCard label="Total Rice" value={results.totalFidyaWeightKg.toLocaleString()} sub="Kg" />
+                <StatCard label="Total Sacks" value={results.totalSacks} sub="Bags" />
+              </div>
             )}
+
+            {/* APP-STYLE CARD LIST (Visible on Mobile) */}
+            {results && (
+              <div className="block md:hidden space-y-3">
+                 <div className="flex justify-between items-center px-2">
+                    <h3 className="font-semibold text-lg text-white">Payment Plan</h3>
+                    <span className="text-xs font-mono text-purple-300 bg-purple-500/20 px-2 py-1 rounded border border-purple-500/30">
+                      {paymentYears} Years
+                    </span>
+                 </div>
+                 {Array.from({ length: paymentYears }).map((_, i) => (
+                   <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col gap-3">
+                      <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                        <span className="font-bold text-white">Year {i + 1}</span>
+                        <span className="text-emerald-300 font-mono font-bold text-lg">₹{results.annualMonetaryValue.toLocaleString()}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-black/20 rounded p-2">
+                          <div className="text-[10px] text-slate-500 uppercase">Qada</div>
+                          <div className="text-purple-300 font-medium">{results.annualQadaFasts}</div>
+                        </div>
+                        <div className="bg-black/20 rounded p-2">
+                          <div className="text-[10px] text-slate-500 uppercase">Rice</div>
+                          <div className="text-slate-200 font-medium">{results.annualFidyaWeightKg}kg</div>
+                        </div>
+                        <div className="bg-black/20 rounded p-2">
+                          <div className="text-[10px] text-slate-500 uppercase">Sacks</div>
+                          <div className="text-slate-200 font-medium">{results.annualSacks}</div>
+                        </div>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+            )}
+
+            {/* DESKTOP TABLE (Hidden on Mobile) */}
+            {results && (
+              <div className="hidden md:block rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-lg">
+                <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
+                  <h3 className="font-semibold text-lg text-white">Equal Payment Schedule</h3>
+                  <span className="text-xs font-mono text-purple-300 bg-purple-500/20 px-2 py-1 rounded border border-purple-500/30">
+                    {paymentYears} Years
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-sm">
+                    <thead>
+                      <tr className="text-slate-400 border-b border-white/10 bg-black/20">
+                        <th className="p-4 font-medium">Year</th>
+                        <th className="p-4 font-medium">Qada (Days)</th>
+                        <th className="p-4 font-medium">Rice (Kg)</th>
+                        <th className="p-4 font-medium">Sacks</th>
+                        <th className="p-4 font-medium text-right">Annual Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-slate-300">
+                      {Array.from({ length: paymentYears }).map((_, i) => (
+                        <tr key={i} className="hover:bg-white/5 transition">
+                          <td className="p-4 font-medium text-white">Year {i + 1}</td>
+                          <td className="p-4 text-purple-300">{results.annualQadaFasts}</td>
+                          <td className="p-4">{results.annualFidyaWeightKg} kg</td>
+                          <td className="p-4">{results.annualSacks}</td>
+                          <td className="p-4 text-right font-mono text-emerald-300 font-bold">
+                            ₹{results.annualMonetaryValue.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
-    );
+      </div>
+    </main>
+  );
+}
+
+// Optimized Input Component with Numeric Keypad Support
+function InputGroup({ label, value, onChange, compact = false }: { label: string, value: number, onChange: (v: number) => void, compact?: boolean }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 px-1">{label}</label>
+      <input
+        type="number"
+        inputMode="decimal" // This triggers numeric keypad on mobile
+        pattern="[0-9]*"
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        className={`w-full bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:bg-black/60 focus:ring-1 focus:ring-purple-500/50 transition duration-200 ${compact ? 'p-2 text-sm' : 'p-3 text-base'}`}
+      />
+    </div>
+  );
+}
+
+function StatCard({ label, value, sub, highlight }: { label: string, value: string | number, sub: string, highlight?: boolean }) {
+  return (
+    <div className={`p-4 rounded-xl border flex flex-col justify-center min-h-[100px] ${highlight ? 'bg-purple-900/20 border-purple-500/30' : 'bg-white/5 border-white/10'}`}>
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{label}</span>
+      <span className={`text-xl md:text-2xl font-bold ${highlight ? 'text-white' : 'text-slate-200'} truncate`}>{value}</span>
+      <span className="text-[10px] text-slate-500 mt-1">{sub}</span>
+    </div>
+  );
 }
