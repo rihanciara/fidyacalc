@@ -53,6 +53,12 @@ export function calculateShafiiFidya(inputs: CalculationInputs): CalculationResu
         paymentPlanYears 
     } = inputs;
 
+    // --- SAFETY GUARDS (Fixes Division by Zero) ---
+    // If payment years is 0 or empty, default to 1 to prevent crash
+    const safePaymentYears = paymentPlanYears <= 0 ? 1 : paymentPlanYears;
+    // If sack weight is 0, default to 1 to prevent crash
+    const safeSackWeight = sackWeight <= 0 ? 1 : sackWeight;
+
     let totalQadaFasts = 0;
     let totalFidyaUnits = 0;
 
@@ -77,8 +83,6 @@ export function calculateShafiiFidya(inputs: CalculationInputs): CalculationResu
         
         totalQadaFasts += record.days;
 
-        // Logic: Fast missed in 2000. Due in 2001.
-        // If Current Year is 2025. Delay = 2025 - 2001 = 24 years.
         const dueYear = record.year + 1;
         const yearsOfDelay = Math.max(0, currentYear - dueYear);
 
@@ -90,19 +94,24 @@ export function calculateShafiiFidya(inputs: CalculationInputs): CalculationResu
     // --- COMMON TOTALS ---
     const totalFidyaWeightKg = totalFidyaUnits * fidyaUnitWeight;
     const totalMonetaryValue = totalFidyaWeightKg * ricePrice;
-    const totalSacks = totalFidyaWeightKg / sackWeight;
+    
+    // Fix: Use safeSackWeight to avoid Infinity
+    const totalSacks = totalFidyaWeightKg / safeSackWeight;
 
     // --- FUTURE PLAN LOGIC ---
-    const annualQadaFasts = Math.ceil(totalQadaFasts / paymentPlanYears);
+    // Fix: Use safePaymentYears
+    const annualQadaFasts = Math.ceil(totalQadaFasts / safePaymentYears);
 
-    const yearsOfFutureDelay = paymentPlanYears - 1;
+    const yearsOfFutureDelay = safePaymentYears - 1;
     const sumOfFutureYears = (yearsOfFutureDelay * (yearsOfFutureDelay + 1)) / 2;
     const futurePenaltyUnits = annualQadaFasts * sumOfFutureYears;
 
     const totalPlanUnits = totalFidyaUnits + futurePenaltyUnits;
     const totalPlanWeight = totalPlanUnits * fidyaUnitWeight;
     const totalPlanValue = totalPlanWeight * ricePrice;
-    const totalPlanSacks = totalPlanWeight / sackWeight;
+    
+    // Fix: Use safeSackWeight
+    const totalPlanSacks = totalPlanWeight / safeSackWeight;
 
     return {
         totalQadaFasts,
@@ -112,9 +121,9 @@ export function calculateShafiiFidya(inputs: CalculationInputs): CalculationResu
         totalSacks: parseFloat(totalSacks.toFixed(2)),
         
         annualQadaFasts,
-        annualFidyaWeightKg: parseFloat((totalPlanWeight / paymentPlanYears).toFixed(2)),
-        annualMonetaryValue: Math.round(totalPlanValue / paymentPlanYears),
-        annualSacks: parseFloat((totalPlanSacks / paymentPlanYears).toFixed(2)),
+        annualFidyaWeightKg: parseFloat((totalPlanWeight / safePaymentYears).toFixed(2)),
+        annualMonetaryValue: Math.round(totalPlanValue / safePaymentYears),
+        annualSacks: parseFloat((totalPlanSacks / safePaymentYears).toFixed(2)),
         
         futurePenaltyUnits,
         grandTotalCost: Math.round(totalPlanValue) 

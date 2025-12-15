@@ -58,7 +58,6 @@ export default function Home() {
 
   // --- HANDLERS: AGE MODE ---
   const updatePeriod = (index: number, field: keyof MissedPeriod, val: number) => {
-    // FIX: Renamed variable from 'new' to 'newPeriods'
     const newPeriods = [...missedPeriods];
     newPeriods[index] = { ...newPeriods[index], [field]: val };
     setMissedPeriods(newPeriods);
@@ -305,17 +304,47 @@ export default function Home() {
 }
 
 // Optimized Input Component with Numeric Keypad Support
-function InputGroup({ label, value, onChange, compact = false, step = 1 }: { label: string, value: number, onChange: (v: number) => void, compact?: boolean, step?: number }) {
+function InputGroup({ 
+  label, 
+  value, 
+  onChange, 
+  compact = false, 
+  step = 1 
+}: { 
+  label: string, 
+  value: number, 
+  onChange: (v: number) => void, 
+  compact?: boolean, 
+  step?: number 
+}) {
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    // Handle empty deletion safely: send 0 to calculator
+    if (val === '') {
+      onChange(0);
+      return;
+    }
+    const num = parseFloat(val);
+    if (!isNaN(num)) {
+      onChange(num);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 px-1 truncate">{label}</label>
+      <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 px-1 truncate">
+        {label}
+      </label>
       <input
         type="number"
-        inputMode="decimal"
+        inputMode="decimal" // Better mobile keyboard
         pattern="[0-9]*"
         step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        // If value is 0, show empty string placeholder so user can type freely without deleting '0'
+        value={value === 0 ? '' : value}
+        onChange={handleChange}
+        placeholder="0"
         className={`w-full bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:bg-black/60 focus:ring-1 focus:ring-purple-500/50 transition duration-200 ${compact ? 'p-2 text-sm' : 'p-3 text-base'}`}
       />
     </div>
