@@ -1,7 +1,7 @@
 // src/app/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 // Import Calculator Logic & Types
 import { calculateShafiiFidya, CalculationInputs, CalculationResults, MissedPeriod, SpecificYear } from '@/utils/calculator';
@@ -19,6 +19,75 @@ const defaultYears: SpecificYear[] = [
   { year: new Date().getFullYear() - 10, days: 30 },
 ];
 
+type BreakdownRow = {
+  label: string;
+  qada: number;
+  fidyaUnits: number;
+  detail: string;
+};
+
+function buildBreakdown(
+  inputs: CalculationInputs,
+  mode: 'age' | 'year'
+): { rows: BreakdownRow[]; safePaymentYears: number; safeSackWeight: number; sumOfFutureYears: number } {
+  const rows: BreakdownRow[] = [];
+  const safePaymentYears = inputs.paymentPlanYears <= 0 ? 1 : inputs.paymentPlanYears;
+  const safeSackWeight = inputs.sackWeight <= 0 ? 1 : inputs.sackWeight;
+
+  if (mode === 'age') {
+    inputs.missedPeriods.forEach((period, index) => {
+      if (period.startAge > period.endAge) return;
+      const yearsInPeriod = period.endAge - period.startAge + 1;
+      const rowQada = yearsInPeriod * period.fastsPerYear;
+      let rowUnits = 0;
+
+      for (let ageMissed = period.startAge; ageMissed <= period.endAge; ageMissed++) {
+        const startDelayAge = ageMissed + 1;
+        const yearsOfDelay = Math.max(0, inputs.currentAge - startDelayAge);
+        if (yearsOfDelay >= 1) {
+          rowUnits += period.fastsPerYear * yearsOfDelay;
+        }
+      }
+
+      const maxDelay = Math.max(0, inputs.currentAge - (period.startAge + 1));
+      const minDelay = Math.max(0, inputs.currentAge - (period.endAge + 1));
+      const detail =
+        rowUnits > 0
+          ? `Delay range: ${maxDelay} to ${minDelay} years x ${period.fastsPerYear} fasts/year`
+          : 'No delay penalty yet';
+
+      rows.push({
+        label: `Period ${index + 1}: age ${period.startAge}-${period.endAge}`,
+        qada: rowQada,
+        fidyaUnits: rowUnits,
+        detail
+      });
+    });
+  } else {
+    inputs.missedSpecificYears.forEach((record, index) => {
+      if (record.days <= 0) return;
+      const dueYear = record.year + 1;
+      const yearsOfDelay = Math.max(0, inputs.currentYear - dueYear);
+      const units = yearsOfDelay >= 1 ? record.days * yearsOfDelay : 0;
+
+      rows.push({
+        label: `Row ${index + 1}: year ${record.year}`,
+        qada: record.days,
+        fidyaUnits: units,
+        detail:
+          yearsOfDelay >= 1
+            ? `Due since ${dueYear}; delayed by ${yearsOfDelay} years`
+            : 'No delay penalty yet'
+      });
+    });
+  }
+
+  const yearsOfFutureDelay = safePaymentYears - 1;
+  const sumOfFutureYears = (yearsOfFutureDelay * (yearsOfFutureDelay + 1)) / 2;
+
+  return { rows, safePaymentYears, safeSackWeight, sumOfFutureYears };
+}
+
 export default function Home() {
   // --- STATE ---
   const [lang, setLang] = useState<Language>('en'); // Language State
@@ -33,6 +102,7 @@ export default function Home() {
 
   // Calculation Mode
   const [calcMode, setCalcMode] = useState<'age' | 'year'>('age');
+  const [resultTab, setResultTab] = useState<'plan' | 'explain'>('plan');
 
   // Input Data
   const [missedPeriods, setMissedPeriods] = useState<MissedPeriod[]>(defaultPeriods);
@@ -40,21 +110,28 @@ export default function Home() {
   
   const [results, setResults] = useState<CalculationResults | null>(null);
 
-  // --- EFFECT: CALCULATE ---
-  useEffect(() => {
-    const inputs: CalculationInputs = {
+  const currentYear = new Date().getFullYear();
+
+  const calculationInputs: CalculationInputs = useMemo(
+    () => ({
       currentAge,
-      currentYear: new Date().getFullYear(),
+      currentYear,
       paymentPlanYears: paymentYears,
       ricePrice,
       sackWeight,
       fidyaUnitWeight,
-      // Pass the specific array based on selected mode
       missedPeriods: calcMode === 'age' ? missedPeriods : [],
       missedSpecificYears: calcMode === 'year' ? missedYears : []
-    };
-    setResults(calculateShafiiFidya(inputs));
-  }, [currentAge, paymentYears, ricePrice, sackWeight, fidyaUnitWeight, missedPeriods, missedYears, calcMode]);
+    }),
+    [currentAge, currentYear, paymentYears, ricePrice, sackWeight, fidyaUnitWeight, calcMode, missedPeriods, missedYears]
+  );
+
+  // --- EFFECT: CALCULATE ---
+  useEffect(() => {
+    setResults(calculateShafiiFidya(calculationInputs));
+  }, [calculationInputs]);
+
+  const breakdown = useMemo(() => buildBreakdown(calculationInputs, calcMode), [calculationInputs, calcMode]);
 
   // --- HANDLERS: AGE MODE ---
   const updatePeriod = (index: number, field: keyof MissedPeriod, val: number) => {
@@ -224,8 +301,25 @@ export default function Home() {
               </div>
             )}
 
-            {/* Mobile: Card View */}
             {results && (
+              <div className="p-1 rounded-xl bg-white/5 border border-white/10 flex">
+                <button
+                  onClick={() => setResultTab('plan')}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${resultTab === 'plan' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  {t.paymentPlan}
+                </button>
+                <button
+                  onClick={() => setResultTab('explain')}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${resultTab === 'explain' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  {t.calculationBreakdown}
+                </button>
+              </div>
+            )}
+
+            {/* Mobile: Card View */}
+            {results && resultTab === 'plan' && (
               <div className="block md:hidden space-y-3">
                  <div className="flex justify-between items-center px-2">
                     <h3 className="font-semibold text-lg text-white">{t.paymentPlan}</h3>
@@ -259,7 +353,7 @@ export default function Home() {
             )}
 
             {/* Desktop: Table View */}
-            {results && (
+            {results && resultTab === 'plan' && (
               <div className="hidden md:block rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-lg">
                 <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
                   <h3 className="font-semibold text-lg text-white">{t.paymentPlan}</h3>
@@ -292,6 +386,74 @@ export default function Home() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {results && resultTab === 'explain' && (
+              <div className="rounded-2xl bg-white/5 border border-white/10 shadow-lg p-5 md:p-6 space-y-5">
+                <div>
+                  <h3 className="font-semibold text-lg text-white">{t.breakdownTitle}</h3>
+                  <p className="text-sm text-slate-400 mt-1">
+                    {t.methodUsed}: {calcMode === 'age' ? t.ageMethod : t.yearMethod}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-purple-200">{t.perRowDetails}</h4>
+                  {breakdown.rows.length === 0 && (
+                    <div className="text-sm text-slate-400 bg-black/20 border border-white/5 rounded-lg p-3">
+                      {t.noDelayYet}
+                    </div>
+                  )}
+                  {breakdown.rows.map((row) => (
+                    <div key={row.label} className="bg-black/20 border border-white/5 rounded-lg p-3 text-sm space-y-1">
+                      <div className="text-slate-200 font-medium">{row.label}</div>
+                      <div className="text-slate-400">{row.detail}</div>
+                      <div className="text-slate-300">
+                        {t.totalQada}: <span className="text-purple-300 font-semibold">{row.qada}</span> | Fidya units: <span className="text-emerald-300 font-semibold">{row.fidyaUnits}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <h4 className="text-sm font-semibold text-purple-200">{t.historicalTotals}</h4>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Total Qada = {breakdown.rows.map((row) => row.qada).join(' + ') || '0'} = {results.totalQadaFasts}
+                  </div>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Historical Fidya Units = {breakdown.rows.map((row) => row.fidyaUnits).join(' + ') || '0'} = {results.totalFidyaUnits}
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <h4 className="text-sm font-semibold text-purple-200">{t.conversionSteps}</h4>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Weight = {results.totalFidyaUnits} x {fidyaUnitWeight} kg = {results.totalFidyaWeightKg} kg
+                  </div>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Historical Cost = {results.totalFidyaWeightKg} x ₹{ricePrice} = ₹{results.totalMonetaryValue.toLocaleString()}
+                  </div>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Sacks = {results.totalFidyaWeightKg} / {breakdown.safeSackWeight} = {results.totalSacks}
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <h4 className="text-sm font-semibold text-purple-200">{t.futurePlanMath}</h4>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Annual Qada = ceil({results.totalQadaFasts} / {breakdown.safePaymentYears}) = {results.annualQadaFasts}
+                  </div>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Future Penalty Units = {results.annualQadaFasts} x {breakdown.sumOfFutureYears} = {results.futurePenaltyUnits}
+                  </div>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Grand Total Cost = ({results.totalFidyaUnits} + {results.futurePenaltyUnits}) x {fidyaUnitWeight} x ₹{ricePrice} = ₹{results.grandTotalCost.toLocaleString()}
+                  </div>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Yearly Plan Cost = ₹{results.grandTotalCost.toLocaleString()} / {breakdown.safePaymentYears} = ₹{results.annualMonetaryValue.toLocaleString()}
+                  </div>
                 </div>
               </div>
             )}
