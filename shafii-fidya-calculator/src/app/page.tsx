@@ -24,6 +24,7 @@ type BreakdownRow = {
   qada: number;
   fidyaUnits: number;
   detail: string;
+  formula: string;
 };
 
 function buildBreakdown(
@@ -40,12 +41,14 @@ function buildBreakdown(
       const yearsInPeriod = period.endAge - period.startAge + 1;
       const rowQada = yearsInPeriod * period.fastsPerYear;
       let rowUnits = 0;
+      let sumDelayYears = 0;
 
       for (let ageMissed = period.startAge; ageMissed <= period.endAge; ageMissed++) {
         const startDelayAge = ageMissed + 1;
         const yearsOfDelay = Math.max(0, inputs.currentAge - startDelayAge);
         if (yearsOfDelay >= 1) {
           rowUnits += period.fastsPerYear * yearsOfDelay;
+          sumDelayYears += yearsOfDelay;
         }
       }
 
@@ -60,7 +63,11 @@ function buildBreakdown(
         label: `Period ${index + 1}: age ${period.startAge}-${period.endAge}`,
         qada: rowQada,
         fidyaUnits: rowUnits,
-        detail
+        detail,
+        formula:
+          rowUnits > 0
+            ? `${period.fastsPerYear} x total delayed years (${sumDelayYears}) = ${rowUnits}`
+            : 'No fidya units because there is no full-year delay yet'
       });
     });
   } else {
@@ -77,7 +84,11 @@ function buildBreakdown(
         detail:
           yearsOfDelay >= 1
             ? `Due since ${dueYear}; delayed by ${yearsOfDelay} years`
-            : 'No delay penalty yet'
+            : 'No delay penalty yet',
+        formula:
+          yearsOfDelay >= 1
+            ? `${record.days} x ${yearsOfDelay} = ${units}`
+            : 'No fidya units because delayed years is 0'
       });
     });
   }
@@ -132,6 +143,18 @@ export default function Home() {
   }, [calculationInputs]);
 
   const breakdown = useMemo(() => buildBreakdown(calculationInputs, calcMode), [calculationInputs, calcMode]);
+
+  const compoundingRows = useMemo(() => {
+    if (!results) return [];
+    let cumulative = 0;
+    return Array.from({ length: breakdown.safePaymentYears }, (_, i) => {
+      const yearNumber = i + 1;
+      const multiplier = Math.max(0, breakdown.safePaymentYears - yearNumber);
+      const penaltyUnits = results.annualQadaFasts * multiplier;
+      cumulative += penaltyUnits;
+      return { yearNumber, multiplier, penaltyUnits, cumulative };
+    });
+  }, [results, breakdown.safePaymentYears]);
 
   // --- HANDLERS: AGE MODE ---
   const updatePeriod = (index: number, field: keyof MissedPeriod, val: number) => {
@@ -399,6 +422,18 @@ export default function Home() {
                   </p>
                 </div>
 
+                <div className="bg-indigo-900/20 border border-indigo-400/20 rounded-lg p-4 text-sm text-indigo-100 space-y-2">
+                  <p>
+                    Layman view: every missed fast day carries a penalty for every full year it stays unpaid.
+                  </p>
+                  <p>
+                    So if one batch is delayed 4 years, it gets counted 4 times. If another is delayed 3 years, it gets counted 3 times.
+                  </p>
+                  <p>
+                    This is why compounding looks like a triangle: {(breakdown.safePaymentYears - 1).toString()} + {(Math.max(0, breakdown.safePaymentYears - 2)).toString()} + ... + 1 + 0.
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold text-purple-200">{t.perRowDetails}</h4>
                   {breakdown.rows.length === 0 && (
@@ -413,6 +448,7 @@ export default function Home() {
                       <div className="text-slate-300">
                         {t.totalQada}: <span className="text-purple-300 font-semibold">{row.qada}</span> | Fidya units: <span className="text-emerald-300 font-semibold">{row.fidyaUnits}</span>
                       </div>
+                      <div className="text-indigo-200/90">Formula: {row.formula}</div>
                     </div>
                   ))}
                 </div>
@@ -446,6 +482,9 @@ export default function Home() {
                     Annual Qada = ceil({results.totalQadaFasts} / {breakdown.safePaymentYears}) = {results.annualQadaFasts}
                   </div>
                   <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
+                    Triangle Multiplication = {breakdown.safePaymentYears - 1} + {Math.max(0, breakdown.safePaymentYears - 2)} + ... + 1 + 0 = {breakdown.sumOfFutureYears}
+                  </div>
+                  <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
                     Future Penalty Units = {results.annualQadaFasts} x {breakdown.sumOfFutureYears} = {results.futurePenaltyUnits}
                   </div>
                   <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
@@ -453,6 +492,32 @@ export default function Home() {
                   </div>
                   <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-slate-300">
                     Yearly Plan Cost = ₹{results.grandTotalCost.toLocaleString()} / {breakdown.safePaymentYears} = ₹{results.annualMonetaryValue.toLocaleString()}
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <h4 className="text-sm font-semibold text-purple-200">Compounding Year by Year</h4>
+                  <div className="overflow-x-auto rounded-lg border border-white/10">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="text-slate-400 border-b border-white/10 bg-black/20">
+                          <th className="p-3 font-medium">Plan Year</th>
+                          <th className="p-3 font-medium">Multiplier</th>
+                          <th className="p-3 font-medium">Penalty Units</th>
+                          <th className="p-3 font-medium">Cumulative Units</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 text-slate-300">
+                        {compoundingRows.map((entry) => (
+                          <tr key={entry.yearNumber}>
+                            <td className="p-3">{entry.yearNumber}</td>
+                            <td className="p-3">{entry.multiplier}</td>
+                            <td className="p-3">{results.annualQadaFasts} x {entry.multiplier} = {entry.penaltyUnits}</td>
+                            <td className="p-3">{entry.cumulative}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
